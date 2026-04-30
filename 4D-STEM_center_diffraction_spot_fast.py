@@ -37,8 +37,8 @@ import numpy as np
 from panta_rhei.scripting import PRScriptingInterface
 from panta_rhei.main.gui.utils import sliced_ndim
 # Add progress bar
-api.add_progress_bar(0, 100, additional_text="Progress")
 api = PRScriptingInterface()
+api.add_progress_bar(0, 100, additional_text="Progress")
 model = api.get_active_model()
 data = api.get_active_data().copy() # copy the data to enable writing
 ndim = sliced_ndim(data.meta_data, data.ndim)
