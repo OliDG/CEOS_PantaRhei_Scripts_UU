@@ -107,7 +107,7 @@ try:
     cx_dyn = float(x_peak)
     cy_dyn = float(y_peak)
 
-    api.data_to_repo(f"{base_name}_sum_init", sum_img, meta_data={"type": "image2D"})
+    api.data_to_repo(f"{base_name}_sum_init", sum_img, meta_data={"type": "2D"})
     api.display_image(f"{base_name}_sum_init")
 
     api.set_progress(10)
@@ -177,8 +177,8 @@ try:
             if processed % max(1, total_to_process // 200) == 0:
                 api.set_progress(10 + int(30 * processed / total_to_process))
 
-    api.data_to_repo(f"{base_name}_dx_COM_abs", dx_abs, meta_data={"type": "image2D"})
-    api.data_to_repo(f"{base_name}_dy_COM_abs", dy_abs, meta_data={"type": "image2D"})
+    api.data_to_repo(f"{base_name}_dx_COM_abs", dx_abs, meta_data={"type": "2D"})
+    api.data_to_repo(f"{base_name}_dy_COM_abs", dy_abs, meta_data={"type": "2D"})
     api.display_image(f"{base_name}_dx_COM_abs")
     api.display_image(f"{base_name}_dy_COM_abs")
 
