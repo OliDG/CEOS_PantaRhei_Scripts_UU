@@ -1,8 +1,5 @@
 # ===============================================================
-# Olivier Donzel-G.
-# Uppsala University, Sweden
-#
-# for Panta Rhei 0.25
+# # for Panta Rhei 0.25
 # to perform a subpixel centering of the direct beam in 4DSTEM nano-probe diffraction without beam stopper. 
 # 
 # Steps:
@@ -15,28 +12,21 @@
 #        - step limitation (10× median of the last 10) (dx_step, dy_step)
 #        - cumulative update of the dynamic center (mask) to follow the direct beam
 #   4) Recenter the DATACUBE using Δ_abs
+
 # ===============================================================
-# MIT License
+# Copyright (C) <2026>  <Olivier Donzel-Gargand>
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
 
-# Copyright (c) 2026 Olivier Donzel-G.
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # ===============================================================
 
 import numpy as np
@@ -56,6 +46,7 @@ model = api.get_active_model()
 data = api.get_active_data()
 cube = data.copy()
 
+#del data
 ndim = sliced_ndim(cube.meta_data, cube.ndim)
 if ndim != 4:
     raise TypeError("This script applies only to 4DSTEM data (scan_y, scan_x, q_y, q_x).")
@@ -75,7 +66,7 @@ Xf = X.astype(np.float64)
 Yf = Y.astype(np.float64)
 
 base_name = model.get_output_name()
-
+# model.close_display()
 api.add_progress_bar(
     0, 100,
     additional_text=f"Initialization 10% -> Offset measurement 40% -> Centering 100%"
@@ -107,8 +98,8 @@ try:
     cx_dyn = float(x_peak)
     cy_dyn = float(y_peak)
 
-    api.data_to_repo(f"{base_name}_sum_init", sum_img, meta_data={"type": "2D"})
-    api.display_image(f"{base_name}_sum_init")
+    sum_dp_init = f"{base_name}_mask_position_init"
+    api.data_to_repo(sum_dp_init, sum_img, meta_data={"type": "2D"})
 
     api.set_progress(10)
 
@@ -177,11 +168,32 @@ try:
             if processed % max(1, total_to_process // 200) == 0:
                 api.set_progress(10 + int(30 * processed / total_to_process))
 
-    api.data_to_repo(f"{base_name}_dx_COM_abs", dx_abs, meta_data={"type": "2D"})
-    api.data_to_repo(f"{base_name}_dy_COM_abs", dy_abs, meta_data={"type": "2D"})
-    api.display_image(f"{base_name}_dx_COM_abs")
-    api.display_image(f"{base_name}_dy_COM_abs")
 
+    # ----------------------------------------------------------
+    # Push outputs and display
+    # ----------------------------------------------------------
+    dx_COM = f"{base_name}_dx_COM_abs"
+    dy_COM = f"{base_name}_dy_COM_abs"
+    api.data_to_repo(dx_COM, dx_abs, meta_data={"type": "2D"})
+    api.data_to_repo(dy_COM, dy_abs, meta_data={"type": "2D"})
+
+
+    config = [
+        (sum_dp_init, False, False, None, None),
+        (dx_COM,   False, False, None, None),
+        (dy_COM,   False, False, None, None),
+    
+    ]
+    dxdyCOM,_ = api.open_multi_view(config, title=f"{base_name} - COM offsets summary")
+    
+    try:
+        roi1 = dxdyCOM[0].insert(
+                        PRScriptingTypes.CircleAnnotation,
+                        parameters={"center": (x_peak, y_peak), "color": "#52f552","line width": 2, "radius": R_PIXELS},
+                        scale_mode="pixel")
+    except Exception as exc:
+                print(f"add ROI error: {exc}")
+                        
     # ======================================================================
     # 4) Recenter the DATACUBE using Δ_abs
     # ======================================================================
@@ -199,7 +211,7 @@ try:
             )
 
     api.data_to_repo(f"{base_name}_recentered", cube_corr, meta_data=cube.meta_data)
-    api.display_image(f"{base_name}_recentered")
+    api.display_image(f"{base_name}_recentered", auto_size=True)
     api.set_progress(100)
 
 finally:
