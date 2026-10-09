@@ -886,11 +886,11 @@ class AzimuthalIntegrationDialog(BaseWorkflowDialog):
                         self._progress.setValue(pct_done)
                         QtWidgets.QApplication.processEvents()
             #Color coded maps for the sectors: first attempt
-            threshold = 0.2 # threshold for contrast to determine if a sector is dominant
+            threshold = 0.25 # threshold for contrast to determine if a sector is dominant
             max_vals  = sector_maps.max(axis=2)
             min_vals  = sector_maps.min(axis=2)
             contrast  = (max_vals - min_vals) / (max_vals + 1e-10)
-            colour_map = np.where(contrast > threshold, np.argmax(sector_maps, axis=2), np.nan)
+            colour_map = np.where(contrast > threshold, np.argmax(sector_maps, axis=2)+1, np.nan)
             # colour_map = np.where(contrast > threshold, np.argmax(sector_maps, axis=2)+1, 0)
             # ---- Push to repo ----------------------------------------
             api = PRScriptingInterface()
